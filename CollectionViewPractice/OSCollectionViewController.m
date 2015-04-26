@@ -7,6 +7,8 @@
 #import "View+MASAdditions.h"
 #import "UIColor+Constant.h"
 #import "OSCollectionViewCell.h"
+#import "OSPresentNavigationController.h"
+#import "OSShareThankViewController.h"
 
 static NSString *const CollectionViewCellReuseIdentifier = @"CollectionViewCellReuseIdentifier";
 static CGFloat const TitleLabelHeight = 40.0f;
@@ -154,6 +156,10 @@ static CGFloat const BottomViewHeight = StartButtonHeight + 2 * StartButtonVerti
 }
 
 - (void) tapStartButton:(UIButton *) tapStartButton {
+    OSShareThankViewController *shareThankViewController = [[OSShareThankViewController alloc] init];
+    OSPresentNavigationController *navigationController = [[OSPresentNavigationController alloc] initWithRootViewController:shareThankViewController];
+    [self.navigationController presentViewController:navigationController
+                                            animated:YES completion:nil];
 
 }
 

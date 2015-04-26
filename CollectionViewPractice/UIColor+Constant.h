@@ -8,4 +8,6 @@
 
 @interface UIColor(Constant)
 + (UIColor *) pageBackgroundColor;
+
++ (UIColor *) separatorGray;
 @end
