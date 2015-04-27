@@ -1,15 +1,10 @@
 PODS:
   - Masonry (0.6.1)
-  - SlackTextViewController (1.5):
-    - SlackTextViewController/Additions (= 1.5)
-  - SlackTextViewController/Additions (1.5)
 
 DEPENDENCIES:
   - Masonry (~> 0.6)
-  - SlackTextViewController (~> 1.5)
 
 SPEC CHECKSUMS:
   Masonry: 4972309f2f134de9dd312f4dc4a21359b50e6caa
-  SlackTextViewController: 4a1797ac2f3616dbd37435fc62da655e61399cdd
 
 COCOAPODS: 0.36.4
