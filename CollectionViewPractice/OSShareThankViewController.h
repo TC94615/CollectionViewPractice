@@ -6,5 +6,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+@class SZTextView;
+
 @interface OSShareThankViewController : UIViewController
 @end
