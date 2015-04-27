@@ -6,10 +6,11 @@
 #import "OSShareThankViewController.h"
 #import "View+MASAdditions.h"
 #import "UIColor+Constant.h"
+#import "SZTextView.h"
 
 static const CGFloat buttonSide = 30;
 static const CGFloat SeparatorLineHeight = 1;
-static const CGFloat HorizantalPadding = 10;
+static const CGFloat HorizontalPadding = 10;
 static const CGFloat VerticalPadding = 10;
 
 @interface OSShareThankViewController()<UINavigationControllerDelegate, UIImagePickerControllerDelegate>
@@ -25,25 +26,6 @@ static const CGFloat VerticalPadding = 10;
 - (void) loadView {
     [super loadView];
 
-}
-
-- (void) imagePickerController:(UIImagePickerController *) picker didFinishPickingImage:(UIImage *) image editingInfo:(NSDictionary *) editingInfo {
-    if (image.size.width <= CGRectGetWidth(self.selectedImageView.frame) && image.size.height <= CGRectGetHeight(self.selectedImageView.frame)) {
-        self.selectedImageView.contentMode = UIViewContentModeTopLeft;
-        [self.selectedImageView setImage:image];
-    } else {
-        self.selectedImageView.contentMode = UIViewContentModeScaleAspectFit;
-        CGFloat scaledImageViewHeight = CGRectGetWidth(self.selectedImageView.frame) * image.size.height / image.size.width;
-        [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.centerX.equalTo(self.view);
-            make.top.equalTo(self.loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
-            make.width.equalTo(self.view).offset(-HorizantalPadding * 2);
-            make.height.equalTo(@(scaledImageViewHeight));
-        }];
-        [self.selectedImageView setImage:image];
-    }
-    self.imageCloseButton.hidden = NO;
-    [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void) viewDidLoad {
@@ -62,7 +44,7 @@ static const CGFloat VerticalPadding = 10;
     avatarImageView.backgroundColor = [UIColor lightGrayColor];
     [self.view addSubview:avatarImageView];
     [avatarImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.view).offset(HorizantalPadding);
+        make.left.equalTo(self.view).offset(HorizontalPadding);
         make.top.equalTo(self.toSomeoneYouThanksView.mas_bottom).offset(VerticalPadding);
         make.width.equalTo(@40);
         make.height.equalTo(@40);
@@ -77,7 +59,7 @@ static const CGFloat VerticalPadding = 10;
     loadPhotoButtonBackgroundView.backgroundColor = [UIColor lightGrayColor];
     [self.view addSubview:loadPhotoButtonBackgroundView];
     [loadPhotoButtonBackgroundView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.view).offset(HorizantalPadding);
+        make.left.equalTo(self.view).offset(HorizontalPadding);
         make.top.equalTo(avatarImageView.mas_bottom).offset(VerticalPadding);
         make.width.equalTo(@(circleRadius * 2));
         make.height.equalTo(@(circleRadius * 2));
@@ -105,10 +87,20 @@ static const CGFloat VerticalPadding = 10;
     [selectedImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(self.view);
         make.top.equalTo(loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
-        make.width.equalTo(self.view).offset(-HorizantalPadding * 2);
+        make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
         make.bottom.equalTo(self.view).offset(-VerticalPadding);
     }];
     self.selectedImageView = selectedImageView;
+
+    SZTextView *textView = [[SZTextView alloc] init];
+    textView.placeholder = @"分享您的心得";
+    [self.view addSubview:textView];
+    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(avatarImageView.mas_right).offset(HorizontalPadding);
+        make.top.equalTo(self.toSomeoneYouThanksView.mas_bottom);
+        make.right.equalTo(self.view).offset(-HorizontalPadding);
+        make.bottom.equalTo(selectedImageView.mas_top).offset(-VerticalPadding);
+    }];
 
     UIButton *imageCloseButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [imageCloseButton addTarget:self action:@selector(tapCloseButton:) forControlEvents:UIControlEventTouchUpInside];
@@ -124,22 +116,7 @@ static const CGFloat VerticalPadding = 10;
     }];
     imageCloseButton.hidden = YES;
     self.imageCloseButton = imageCloseButton;
-}
 
-- (void) tapCloseButton:(UIButton *) sender {
-    self.selectedImageView.image = nil;
-    self.imageCloseButton.hidden = YES;
-    [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.view);
-        make.top.equalTo(self.loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
-        make.width.equalTo(self.view).offset(-HorizantalPadding * 2);
-        make.bottom.equalTo(self.view).offset(-VerticalPadding);
-    }];
-}
-
-- (void) tapLoadPhotoButton:(UIButton *) sender {
-    [self presentViewController:self.imagePickerController animated:YES
-                     completion:nil];
 }
 
 - (void) configureToSomeoneYouThanksView {
@@ -158,7 +135,7 @@ static const CGFloat VerticalPadding = 10;
     sendThanksLabel.textColor = [UIColor lightGrayColor];
     [toSomeoneYouThanksView addSubview:sendThanksLabel];
     [sendThanksLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(toSomeoneYouThanksView).offset(5);
+        make.left.equalTo(toSomeoneYouThanksView).offset(HorizontalPadding);
         make.top.equalTo(toSomeoneYouThanksView);
         make.bottom.equalTo(toSomeoneYouThanksView);
     }];
@@ -178,7 +155,7 @@ static const CGFloat VerticalPadding = 10;
     [toSomeoneYouThanksView addSubview:addThanksListButton];
     [addThanksListButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(toSomeoneYouThanksView);
-        make.right.equalTo(toSomeoneYouThanksView);
+        make.right.equalTo(toSomeoneYouThanksView).offset(-HorizontalPadding);
         make.width.equalTo(@(buttonSide));
         make.height.equalTo(@(buttonSide));
     }];
@@ -191,10 +168,6 @@ static const CGFloat VerticalPadding = 10;
         make.width.equalTo(toSomeoneYouThanksView);
         make.height.equalTo(@(SeparatorLineHeight));
     }];
-}
-
-- (void) tapAddThanksListButton:(UIButton *) sender {
-
 }
 
 - (void) configureNavigationController {
@@ -238,12 +211,55 @@ static const CGFloat VerticalPadding = 10;
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:rightButtonView];
 }
 
+#pragma mark button actions
+
+- (void) tapCloseButton:(UIButton *) sender {
+    self.selectedImageView.image = nil;
+    self.imageCloseButton.hidden = YES;
+    [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.view);
+        make.top.equalTo(self.loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
+        make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
+        make.bottom.equalTo(self.view).offset(-VerticalPadding);
+    }];
+}
+
+- (void) tapLoadPhotoButton:(UIButton *) sender {
+    [self presentViewController:self.imagePickerController animated:YES
+                     completion:nil];
+}
+
+- (void) tapAddThanksListButton:(UIButton *) sender {
+
+}
+
 - (void) tapCancelButton:(UIButton *) sender {
     [self.navigationController dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void) tapPublicButton:(UIButton *) sender {
     [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+}
+
+#pragma mark UIImagePickerControllerDelegate
+
+- (void) imagePickerController:(UIImagePickerController *) picker didFinishPickingImage:(UIImage *) image editingInfo:(NSDictionary *) editingInfo {
+    if (image.size.width <= CGRectGetWidth(self.selectedImageView.frame) && image.size.height <= CGRectGetHeight(self.selectedImageView.frame)) {
+        self.selectedImageView.contentMode = UIViewContentModeTopLeft;
+        [self.selectedImageView setImage:image];
+    } else {
+        self.selectedImageView.contentMode = UIViewContentModeScaleAspectFit;
+        CGFloat scaledImageViewHeight = CGRectGetWidth(self.selectedImageView.frame) * image.size.height / image.size.width;
+        [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.centerX.equalTo(self.view);
+            make.top.equalTo(self.loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
+            make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
+            make.height.equalTo(@(scaledImageViewHeight));
+        }];
+        [self.selectedImageView setImage:image];
+    }
+    self.imageCloseButton.hidden = NO;
+    [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
 
