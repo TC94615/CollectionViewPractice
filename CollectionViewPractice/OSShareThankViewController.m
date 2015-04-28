@@ -15,8 +15,9 @@ static const CGFloat HorizontalPadding = 10;
 static const CGFloat VerticalPadding = 10;
 static const CGFloat ButtonBackgroundCircleRadius = 15;
 static const CGFloat LoadPhotoButtonSide = 20;
+//static const CGFloat TextViewInitHeight = 120;
 
-@interface OSShareThankViewController()<UINavigationControllerDelegate, UIImagePickerControllerDelegate>
+@interface OSShareThankViewController()<UINavigationControllerDelegate, UIImagePickerControllerDelegate, UITextViewDelegate, UIScrollViewDelegate>
 
 @property (nonatomic, strong) UIView *toSomeoneYouThanksView;
 @property (nonatomic, strong) UIImageView *selectedImageView;
@@ -24,6 +25,8 @@ static const CGFloat LoadPhotoButtonSide = 20;
 @property (nonatomic, strong) UIView *loadPhotoButtonBackgroundView;
 @property (nonatomic, strong) UIButton *imageCloseButton;
 @property (nonatomic, strong) SZTextView *textView;
+@property (nonatomic, strong) UIImageView *avatarImageView;
+@property (nonatomic, strong) UIScrollView *scrollView;
 @end
 
 @implementation OSShareThankViewController
@@ -34,8 +37,11 @@ static const CGFloat LoadPhotoButtonSide = 20;
 
 - (void) viewDidLoad {
     [super viewDidLoad];
-
+    UITapGestureRecognizer *tapViewGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                               action:@selector(tapView:)];
+    [self.view addGestureRecognizer:tapViewGestureRecognizer];
     self.view.backgroundColor = [UIColor whiteColor];
+
     [self configureNavigationController];
     [self configureToSomeoneYouThanksView];
     [self configureMainView];
@@ -44,6 +50,12 @@ static const CGFloat LoadPhotoButtonSide = 20;
     imagePickerController.delegate = self;
     imagePickerController.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
     self.imagePickerController = imagePickerController;
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onKeyboardWillShowNotification:)
+                                                 name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onKeyboardWillHideNotification:)
+                                                 name:UIKeyboardWillHideNotification object:nil];
+
 }
 
 - (void) viewWillDisappear:(BOOL) animated {
@@ -52,19 +64,33 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [self.textView endEditing:YES];
 }
 
-#pragma mark layout
+#pragma mark layouts
 
 - (void) configureMainView {
 
+    UIScrollView *scrollView = [[UIScrollView alloc] init];
+    scrollView.delegate = self;
+    scrollView.userInteractionEnabled = YES;
+    scrollView.clipsToBounds = YES;
+    [self.view addSubview:scrollView];
+    [scrollView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.view);
+        make.top.equalTo(self.toSomeoneYouThanksView.mas_bottom);
+        make.width.equalTo(self.view);
+        make.bottom.equalTo(self.view);
+    }];
+    self.scrollView = scrollView;
+
     UIImageView *avatarImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"ic_person_black_48dp.png"]];
     avatarImageView.backgroundColor = [UIColor lightGrayColor];
-    [self.view addSubview:avatarImageView];
+    [scrollView addSubview:avatarImageView];
     [avatarImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.view).offset(HorizontalPadding);
-        make.top.equalTo(self.toSomeoneYouThanksView.mas_bottom).offset(VerticalPadding);
+        make.left.equalTo(scrollView).offset(HorizontalPadding);
+        make.top.equalTo(scrollView).offset(VerticalPadding);
         make.width.equalTo(@(AvatarSide));
         make.height.equalTo(@(AvatarSide));
     }];
+    self.avatarImageView = avatarImageView;
 
     UITapGestureRecognizer *loadPhotoButtonBackgroundTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self
                                                                                                           action:@selector(tapLoadPhotoButton:)];
@@ -72,9 +98,9 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [loadPhotoButtonBackgroundView addGestureRecognizer:loadPhotoButtonBackgroundTapGesture];
     loadPhotoButtonBackgroundView.layer.cornerRadius = ButtonBackgroundCircleRadius;
     loadPhotoButtonBackgroundView.backgroundColor = [UIColor lightGrayColor];
-    [self.view addSubview:loadPhotoButtonBackgroundView];
+    [scrollView addSubview:loadPhotoButtonBackgroundView];
     [loadPhotoButtonBackgroundView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.view).offset(HorizontalPadding);
+        make.left.equalTo(scrollView).offset(HorizontalPadding);
         make.top.equalTo(avatarImageView.mas_bottom).offset(VerticalPadding);
         make.width.equalTo(@(ButtonBackgroundCircleRadius * 2));
         make.height.equalTo(@(ButtonBackgroundCircleRadius * 2));
@@ -87,7 +113,7 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [loadPhotoButton setImage:[[UIImage imageNamed:@"ic_photo_camera_black_48dp.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate]
                      forState:UIControlStateNormal];
     loadPhotoButton.tintColor = [UIColor whiteColor];
-    [self.view addSubview:loadPhotoButton];
+    [scrollView addSubview:loadPhotoButton];
     [loadPhotoButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(loadPhotoButtonBackgroundView);
         make.centerY.equalTo(loadPhotoButtonBackgroundView);
@@ -95,34 +121,37 @@ static const CGFloat LoadPhotoButtonSide = 20;
         make.height.equalTo(@(LoadPhotoButtonSide));
     }];
 
+    SZTextView *textView = [[SZTextView alloc] init];
+    textView.delegate = self;
+    textView.scrollEnabled = NO;
+    textView.scrollsToTop = NO;
+    textView.placeholder = @"分享您的心得";
+    [scrollView addSubview:textView];
+    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(avatarImageView.mas_right).offset(HorizontalPadding);
+        make.top.equalTo(scrollView);
+        make.right.equalTo(self.view).offset(-HorizontalPadding);
+        make.bottom.equalTo(loadPhotoButtonBackgroundView);
+    }];
+    self.textView = textView;
+
     UIImageView *selectedImageView = [[UIImageView alloc] init];
     selectedImageView.clipsToBounds = YES;
     selectedImageView.contentMode = UIViewContentModeScaleAspectFit;
-    [self.view addSubview:selectedImageView];
+    [scrollView addSubview:selectedImageView];
     [selectedImageView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.view);
-        make.top.equalTo(loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
+        make.centerX.equalTo(scrollView);
+        make.top.equalTo(textView.mas_bottom).offset(VerticalPadding);
         make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
-        make.bottom.equalTo(self.view).offset(-VerticalPadding);
+        make.bottom.equalTo(scrollView).offset(-VerticalPadding);
     }];
     self.selectedImageView = selectedImageView;
-
-    SZTextView *textView = [[SZTextView alloc] init];
-    textView.placeholder = @"分享您的心得";
-    [self.view addSubview:textView];
-    [textView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(avatarImageView.mas_right).offset(HorizontalPadding);
-        make.top.equalTo(self.toSomeoneYouThanksView.mas_bottom);
-        make.right.equalTo(self.view).offset(-HorizontalPadding);
-        make.bottom.equalTo(selectedImageView.mas_top).offset(-VerticalPadding);
-    }];
-    self.textView = textView;
 
     UIButton *imageCloseButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [imageCloseButton addTarget:self action:@selector(tapCloseButton:) forControlEvents:UIControlEventTouchUpInside];
     [imageCloseButton setImage:[UIImage imageNamed:@"ic_cancel_custom_48dp.png"]
                       forState:UIControlStateNormal];
-    [self.view addSubview:imageCloseButton];
+    [scrollView addSubview:imageCloseButton];
     [imageCloseButton mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(selectedImageView.mas_right);
         make.centerY.equalTo(selectedImageView.mas_top);
@@ -131,6 +160,8 @@ static const CGFloat LoadPhotoButtonSide = 20;
     }];
     imageCloseButton.hidden = YES;
     self.imageCloseButton = imageCloseButton;
+
+    [self setScrollViewContentSize];
 }
 
 - (void) configureToSomeoneYouThanksView {
@@ -231,8 +262,8 @@ static const CGFloat LoadPhotoButtonSide = 20;
     self.selectedImageView.image = nil;
     self.imageCloseButton.hidden = YES;
     [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.view);
-        make.top.equalTo(self.loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
+        make.centerX.equalTo(self.scrollView);
+        make.top.equalTo(self.textView.mas_bottom).offset(VerticalPadding);
         make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
         make.bottom.equalTo(self.view).offset(-VerticalPadding);
     }];
@@ -255,6 +286,32 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [self.navigationController dismissViewControllerAnimated:YES completion:nil];
 }
 
+#pragma mark gesture actions
+
+- (void) tapView:(UITapGestureRecognizer *) sender {
+    [self.view endEditing:YES];
+}
+
+#pragma mark notification action
+
+- (void) onKeyboardWillShowNotification:(NSNotification *) sender {
+    NSDictionary *info = sender.userInfo;
+    CGSize keyboardSize = [info[UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+    UIEdgeInsets contentInsets = self.scrollView.contentInset;
+    contentInsets.bottom = keyboardSize.height;
+    self.scrollView.contentInset = contentInsets;
+    self.scrollView.scrollIndicatorInsets = contentInsets;
+    NSLog(@">>>>>>>>>>>> self.scrollView.contentSize.height = %f", self.scrollView.contentSize.height);
+    NSLog(@">>>>>>>>>>>> self.scrollView.contentInset.bottom = %f", self.scrollView.contentInset.bottom);
+}
+
+- (void) onKeyboardWillHideNotification:(NSNotification *) sender {
+    UIEdgeInsets contentInsets = self.scrollView.contentInset;
+    contentInsets.bottom = 0;
+    self.scrollView.contentInset = contentInsets;
+    self.scrollView.scrollIndicatorInsets = contentInsets;
+}
+
 #pragma mark UIImagePickerControllerDelegate
 
 - (void) imagePickerController:(UIImagePickerController *) picker didFinishPickingImage:(UIImage *) image editingInfo:(NSDictionary *) editingInfo {
@@ -265,16 +322,51 @@ static const CGFloat LoadPhotoButtonSide = 20;
         self.selectedImageView.contentMode = UIViewContentModeScaleAspectFit;
         CGFloat scaledImageViewHeight = CGRectGetWidth(self.selectedImageView.frame) * image.size.height / image.size.width;
         [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.centerX.equalTo(self.view);
-            make.top.equalTo(self.loadPhotoButtonBackgroundView.mas_bottom).offset(VerticalPadding);
+            make.centerX.equalTo(self.scrollView);
+            make.top.equalTo(self.textView.mas_bottom).offset(VerticalPadding);
             make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
             make.height.equalTo(@(scaledImageViewHeight));
         }];
         [self.selectedImageView setImage:image];
     }
     self.imageCloseButton.hidden = NO;
+    [self setScrollViewContentSize];
     [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
+#pragma mark UITextViewDelegate
+
+- (void) textViewDidBeginEditing:(UITextView *) textView {
+    [self layoutTextView];
+}
+
+- (void) textViewDidChange:(UITextView *) textView {
+    [self layoutTextView];
+}
+
+- (void) layoutTextView {
+    [self.textView sizeToFit];
+    CGFloat TextViewInitHeight = self.loadPhotoButtonBackgroundView.frame.origin.y + self.loadPhotoButtonBackgroundView.frame.size.height - self.textView.frame.origin.y;
+    CGFloat textViewHeight = self.textView.frame.size.height >= TextViewInitHeight ? self.textView.frame.size.height : TextViewInitHeight;
+
+    [self.textView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.avatarImageView.mas_right).offset(HorizontalPadding);
+        make.top.equalTo(self.scrollView);
+        make.right.equalTo(self.view).offset(-HorizontalPadding);
+        make.height.equalTo(@(textViewHeight));
+    }];
+    [self setScrollViewContentSize];
+}
+
+#pragma mark UIScrollViewDelegate
+
+- (void) setScrollViewContentSize {
+    CGFloat TextViewInitHeight = self.loadPhotoButtonBackgroundView.frame.origin.y + self.loadPhotoButtonBackgroundView.frame.size.height - self.textView.frame.origin.y;
+    CGFloat textViewHeight = self.textView.frame.size.height >= TextViewInitHeight ? self.textView.frame.size.height : TextViewInitHeight;
+    CGFloat contentHeight = CGRectGetHeight(self.selectedImageView.frame) + textViewHeight + 2 * VerticalPadding;
+    CGSize scrollViewContentSize = CGSizeMake(CGRectGetWidth(self.view.frame), contentHeight);
+    self.scrollView.contentSize = scrollViewContentSize;
+    NSLog(@">>>>>>>>>>>> contentHeight = %f", contentHeight);
+}
 
 @end
