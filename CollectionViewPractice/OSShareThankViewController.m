@@ -15,7 +15,6 @@ static const CGFloat HorizontalPadding = 10;
 static const CGFloat VerticalPadding = 10;
 static const CGFloat ButtonBackgroundCircleRadius = 15;
 static const CGFloat LoadPhotoButtonSide = 20;
-//static const CGFloat TextViewInitHeight = 120;
 
 @interface OSShareThankViewController()<UINavigationControllerDelegate, UIImagePickerControllerDelegate, UITextViewDelegate, UIScrollViewDelegate>
 
@@ -37,25 +36,13 @@ static const CGFloat LoadPhotoButtonSide = 20;
 
 - (void) viewDidLoad {
     [super viewDidLoad];
-    UITapGestureRecognizer *tapViewGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                               action:@selector(tapView:)];
-    [self.view addGestureRecognizer:tapViewGestureRecognizer];
-    self.view.backgroundColor = [UIColor whiteColor];
 
+    [self configureSelfView];
     [self configureNavigationController];
     [self configureToSomeoneYouThanksView];
     [self configureMainView];
-
-    UIImagePickerController *imagePickerController = [[UIImagePickerController alloc] init];
-    imagePickerController.delegate = self;
-    imagePickerController.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-    self.imagePickerController = imagePickerController;
-
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onKeyboardWillShowNotification:)
-                                                 name:UIKeyboardWillShowNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onKeyboardWillHideNotification:)
-                                                 name:UIKeyboardWillHideNotification object:nil];
-
+    [self configureImagePicker];
+    [self registerNotificationCenter];
 }
 
 - (void) viewWillDisappear:(BOOL) animated {
@@ -64,7 +51,28 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [self.textView endEditing:YES];
 }
 
-#pragma mark layouts
+#pragma mark layouts and registers
+
+- (void) configureSelfView {
+    UITapGestureRecognizer *tapViewGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                               action:@selector(tapView:)];
+    [self.view addGestureRecognizer:tapViewGestureRecognizer];
+    self.view.backgroundColor = [UIColor whiteColor];
+}
+
+- (void) registerNotificationCenter {
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onKeyboardWillShowNotification:)
+                                                 name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onKeyboardWillHideNotification:)
+                                                 name:UIKeyboardWillHideNotification object:nil];
+}
+
+- (void) configureImagePicker {
+    UIImagePickerController *imagePickerController = [[UIImagePickerController alloc] init];
+    imagePickerController.delegate = self;
+    imagePickerController.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
+    self.imagePickerController = imagePickerController;
+}
 
 - (void) configureMainView {
 
@@ -301,8 +309,6 @@ static const CGFloat LoadPhotoButtonSide = 20;
     contentInsets.bottom = keyboardSize.height;
     self.scrollView.contentInset = contentInsets;
     self.scrollView.scrollIndicatorInsets = contentInsets;
-    NSLog(@">>>>>>>>>>>> self.scrollView.contentSize.height = %f", self.scrollView.contentSize.height);
-    NSLog(@">>>>>>>>>>>> self.scrollView.contentInset.bottom = %f", self.scrollView.contentInset.bottom);
 }
 
 - (void) onKeyboardWillHideNotification:(NSNotification *) sender {
@@ -348,7 +354,6 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [self.textView sizeToFit];
     CGFloat TextViewInitHeight = self.loadPhotoButtonBackgroundView.frame.origin.y + self.loadPhotoButtonBackgroundView.frame.size.height - self.textView.frame.origin.y;
     CGFloat textViewHeight = self.textView.frame.size.height >= TextViewInitHeight ? self.textView.frame.size.height : TextViewInitHeight;
-
     [self.textView mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(self.avatarImageView.mas_right).offset(HorizontalPadding);
         make.top.equalTo(self.scrollView);
@@ -366,7 +371,6 @@ static const CGFloat LoadPhotoButtonSide = 20;
     CGFloat contentHeight = CGRectGetHeight(self.selectedImageView.frame) + textViewHeight + 2 * VerticalPadding;
     CGSize scrollViewContentSize = CGSizeMake(CGRectGetWidth(self.view.frame), contentHeight);
     self.scrollView.contentSize = scrollViewContentSize;
-    NSLog(@">>>>>>>>>>>> contentHeight = %f", contentHeight);
 }
 
 @end
