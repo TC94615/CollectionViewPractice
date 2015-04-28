@@ -264,6 +264,24 @@ static const CGFloat LoadPhotoButtonSide = 20;
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:rightButtonView];
 }
 
+- (void) layoutTextView {
+    [self.textView sizeToFit];
+    CGFloat textViewHeight = [self getCurrentTextViewHeight];
+    [self.textView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.avatarImageView.mas_right).offset(HorizontalPadding);
+        make.top.equalTo(self.scrollView);
+        make.right.equalTo(self.view).offset(-HorizontalPadding);
+        make.height.equalTo(@(textViewHeight));
+    }];
+    [self setScrollViewContentSize];
+}
+
+- (CGFloat) getCurrentTextViewHeight {
+    CGFloat TextViewInitHeight = self.loadPhotoButtonBackgroundView.frame.origin.y + self.loadPhotoButtonBackgroundView.frame.size.height - self.textView.frame.origin.y;
+    CGFloat textViewHeight = self.textView.frame.size.height >= TextViewInitHeight ? self.textView.frame.size.height : TextViewInitHeight;
+    return textViewHeight;
+}
+
 #pragma mark button actions
 
 - (void) tapCloseButton:(UIButton *) sender {
@@ -350,24 +368,10 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [self layoutTextView];
 }
 
-- (void) layoutTextView {
-    [self.textView sizeToFit];
-    CGFloat TextViewInitHeight = self.loadPhotoButtonBackgroundView.frame.origin.y + self.loadPhotoButtonBackgroundView.frame.size.height - self.textView.frame.origin.y;
-    CGFloat textViewHeight = self.textView.frame.size.height >= TextViewInitHeight ? self.textView.frame.size.height : TextViewInitHeight;
-    [self.textView mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.avatarImageView.mas_right).offset(HorizontalPadding);
-        make.top.equalTo(self.scrollView);
-        make.right.equalTo(self.view).offset(-HorizontalPadding);
-        make.height.equalTo(@(textViewHeight));
-    }];
-    [self setScrollViewContentSize];
-}
-
 #pragma mark UIScrollViewDelegate
 
 - (void) setScrollViewContentSize {
-    CGFloat TextViewInitHeight = self.loadPhotoButtonBackgroundView.frame.origin.y + self.loadPhotoButtonBackgroundView.frame.size.height - self.textView.frame.origin.y;
-    CGFloat textViewHeight = self.textView.frame.size.height >= TextViewInitHeight ? self.textView.frame.size.height : TextViewInitHeight;
+    CGFloat textViewHeight = [self getCurrentTextViewHeight];
     CGFloat contentHeight = CGRectGetHeight(self.selectedImageView.frame) + textViewHeight + 2 * VerticalPadding;
     CGSize scrollViewContentSize = CGSizeMake(CGRectGetWidth(self.view.frame), contentHeight);
     self.scrollView.contentSize = scrollViewContentSize;
