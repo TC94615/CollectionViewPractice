@@ -10,10 +10,6 @@
 
 const CGFloat ButtonBackgroundCircleRadius = 15;
 
-@interface OSClosableImageView()
-@property (nonatomic, strong) UIButton *imageCloseButton;
-@end
-
 @implementation OSClosableImageView
 - (instancetype) init {
     self = [super init];
@@ -40,8 +36,6 @@ const CGFloat ButtonBackgroundCircleRadius = 15;
             make.width.equalTo(@(ButtonBackgroundCircleRadius * 2));
             make.height.equalTo(@(ButtonBackgroundCircleRadius * 2));
         }];
-        self.imageCloseButton = imageCloseButton;
-
     }
     return self;
 }
@@ -54,14 +48,6 @@ const CGFloat ButtonBackgroundCircleRadius = 15;
     if ([self.delegate respondsToSelector:@selector(closeImageView:)]) {
         [self.delegate closeImageView:self.imageView];
     }
-//    self.imageView.image = nil;
-//    self.imageCloseButton.hidden = YES;
-//    [self.imageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-//        make.centerX.equalTo(self.scrollView);
-//        make.top.equalTo(self.textView.mas_bottom).offset(VerticalPadding);
-//        make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
-//        make.bottom.equalTo(self.view).offset(-VerticalPadding);
-//    }];
 }
 
 - (CGFloat) estimateHeight {
