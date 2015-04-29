@@ -7,31 +7,26 @@
 #import "View+MASAdditions.h"
 #import "UIColor+Constant.h"
 #import "SZTextView.h"
+#import "OSClosableImageView.h"
+#import "UIDImen.h"
 
-static const CGFloat buttonSide = 30;
-static const CGFloat AvatarSide = 40;
-static const CGFloat SeparatorLineHeight = 1;
-static const CGFloat HorizontalPadding = 10;
-static const CGFloat VerticalPadding = 10;
-static const CGFloat ButtonBackgroundCircleRadius = 15;
-static const CGFloat LoadPhotoButtonSide = 20;
-
-@interface OSShareThankViewController()<UINavigationControllerDelegate, UIImagePickerControllerDelegate, UITextViewDelegate, UIScrollViewDelegate>
+@interface OSShareThankViewController()<UINavigationControllerDelegate, UIImagePickerControllerDelegate, UITextViewDelegate, UIScrollViewDelegate, OSClosableImageViewDelegate>
 
 @property (nonatomic, strong) UIView *toSomeoneYouThanksView;
-@property (nonatomic, strong) UIImageView *selectedImageView;
 @property (nonatomic, strong) UIImagePickerController *imagePickerController;
 @property (nonatomic, strong) UIView *loadPhotoButtonBackgroundView;
-@property (nonatomic, strong) UIButton *imageCloseButton;
 @property (nonatomic, strong) SZTextView *textView;
 @property (nonatomic, strong) UIImageView *avatarImageView;
 @property (nonatomic, strong) UIScrollView *scrollView;
+@property (nonatomic, strong) UIView *loadedImageViewsContainer;
+@property (nonatomic, strong) NSMutableArray *loadedImageViews;
 @end
 
 @implementation OSShareThankViewController
 - (void) loadView {
     [super loadView];
 
+    _loadedImageViews = [NSMutableArray array];
 }
 
 - (void) viewDidLoad {
@@ -141,35 +136,17 @@ static const CGFloat LoadPhotoButtonSide = 20;
         make.right.equalTo(self.view).offset(-HorizontalPadding);
         make.bottom.equalTo(loadPhotoButtonBackgroundView);
     }];
+    [self layoutTextView];
     self.textView = textView;
 
-    UIImageView *selectedImageView = [[UIImageView alloc] init];
-    selectedImageView.clipsToBounds = YES;
-    selectedImageView.contentMode = UIViewContentModeScaleAspectFit;
-    [scrollView addSubview:selectedImageView];
-    [selectedImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+    UIView *loadedImageViewsContainer = [[UIView alloc] init];
+    [scrollView addSubview:loadedImageViewsContainer];
+    [loadedImageViewsContainer mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(scrollView);
         make.top.equalTo(textView.mas_bottom).offset(VerticalPadding);
         make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
-        make.bottom.equalTo(scrollView).offset(-VerticalPadding);
     }];
-    self.selectedImageView = selectedImageView;
-
-    UIButton *imageCloseButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [imageCloseButton addTarget:self action:@selector(tapCloseButton:) forControlEvents:UIControlEventTouchUpInside];
-    [imageCloseButton setImage:[UIImage imageNamed:@"ic_cancel_custom_48dp.png"]
-                      forState:UIControlStateNormal];
-    [scrollView addSubview:imageCloseButton];
-    [imageCloseButton mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(selectedImageView.mas_right);
-        make.centerY.equalTo(selectedImageView.mas_top);
-        make.width.equalTo(@(ButtonBackgroundCircleRadius * 2));
-        make.height.equalTo(@(ButtonBackgroundCircleRadius * 2));
-    }];
-    imageCloseButton.hidden = YES;
-    self.imageCloseButton = imageCloseButton;
-
-    [self setScrollViewContentSize];
+    self.loadedImageViewsContainer = loadedImageViewsContainer;
 }
 
 - (void) configureToSomeoneYouThanksView {
@@ -276,24 +253,117 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [self setScrollViewContentSize];
 }
 
+- (void) layoutImageViewsContainer {
+    [self.loadedImageViewsContainer mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.scrollView);
+        make.top.equalTo(self.textView.mas_bottom).offset(VerticalPadding);
+        make.width.equalTo(self.scrollView);
+        make.bottom.equalTo(self.loadedImageViews.count > 0 ? self.loadedImageViews.lastObject : self.textView).offset(VerticalPadding);
+    }];
+    [self setScrollViewContentSize];
+}
+
+- (void) layoutImageViewWithImage:(UIImage *) image {
+    UIView *container = self.loadedImageViewsContainer;
+    NSUInteger count = self.loadedImageViews.count;
+    CGFloat imageMaxWidth = CGRectGetWidth(container.frame) - HorizontalPadding * 2;
+
+    OSClosableImageView *currentImageView = [[OSClosableImageView alloc] init];
+    currentImageView.delegate = self;
+    currentImageView.clipsToBounds = YES;
+    [currentImageView setImage:image];
+    [container addSubview:currentImageView];
+    if (image.size.width <= imageMaxWidth) {
+        [currentImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(container);
+            make.top.equalTo(count == 0 ? container : [self.loadedImageViews.lastObject mas_bottom]);
+            make.width.equalTo(@(image.size.width + HorizontalPadding * 2));
+            make.height.equalTo(@(image.size.height + VerticalPadding));
+        }];
+    } else {
+        CGFloat scaledImageViewHeight = imageMaxWidth * image.size.height / image.size.width;
+        [currentImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+            make.left.equalTo(container);
+            make.top.equalTo(count == 0 ? container : [self.loadedImageViews.lastObject mas_bottom]);
+            make.width.equalTo(container);
+            make.height.equalTo(@(scaledImageViewHeight + VerticalPadding));
+        }];
+    }
+    [self.loadedImageViews addObject:currentImageView];
+}
+
 - (CGFloat) getCurrentTextViewHeight {
     CGFloat TextViewInitHeight = self.loadPhotoButtonBackgroundView.frame.origin.y + self.loadPhotoButtonBackgroundView.frame.size.height - self.textView.frame.origin.y;
     CGFloat textViewHeight = self.textView.frame.size.height >= TextViewInitHeight ? self.textView.frame.size.height : TextViewInitHeight;
     return textViewHeight;
 }
 
-#pragma mark button actions
-
-- (void) tapCloseButton:(UIButton *) sender {
-    self.selectedImageView.image = nil;
-    self.imageCloseButton.hidden = YES;
-    [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-        make.centerX.equalTo(self.scrollView);
-        make.top.equalTo(self.textView.mas_bottom).offset(VerticalPadding);
-        make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
-        make.bottom.equalTo(self.view).offset(-VerticalPadding);
-    }];
+- (void) setScrollViewContentSize {
+    CGFloat textViewHeight = [self getCurrentTextViewHeight];
+    CGFloat imageViewsContainerHeight = [self estimateImageViewsContainerHeight];
+    CGFloat contentHeight = imageViewsContainerHeight + textViewHeight + 2 * VerticalPadding;
+    CGSize scrollViewContentSize = CGSizeMake(CGRectGetWidth(self.view.frame), contentHeight);
+    self.scrollView.contentSize = scrollViewContentSize;
 }
+
+- (CGFloat) estimateImageViewsContainerHeight {
+    CGFloat estimateHeight = 0;
+    for (OSClosableImageView *loadedImageView in self.loadedImageViews) {
+        estimateHeight += [loadedImageView estimateHeight];
+    }
+    return estimateHeight;
+}
+
+- (void) layoutImageViews {
+    UIView *container = self.loadedImageViewsContainer;
+    OSClosableImageView *loadedImageView;
+    NSUInteger count = self.loadedImageViews.count;
+    CGFloat imageMaxWidth = CGRectGetWidth(container.frame) - HorizontalPadding * 2;
+    if (count > 0) {
+        loadedImageView = self.loadedImageViews.firstObject;
+        UIImage *image = loadedImageView.imageView.image;
+        if (image.size.width <= imageMaxWidth) {
+            [loadedImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.left.equalTo(container);
+                make.top.equalTo(container);
+                make.width.equalTo(@(image.size.width + HorizontalPadding * 2));
+                make.height.equalTo(@(image.size.height + VerticalPadding));
+            }];
+        } else {
+            CGFloat scaledImageViewHeight = imageMaxWidth * image.size.height / image.size.width;
+            [loadedImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.left.equalTo(container);
+                make.top.equalTo(container);
+                make.width.equalTo(container);
+                make.height.equalTo(@(scaledImageViewHeight + VerticalPadding));
+            }];
+        }
+    }
+    OSClosableImageView *lastImageView;
+    for (NSUInteger i = 1; i < count; i++) {
+        lastImageView = self.loadedImageViews[i - 1];
+        loadedImageView = self.loadedImageViews[i];
+        UIImage *image = loadedImageView.imageView.image;
+        if (image.size.width <= imageMaxWidth) {
+            [loadedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.left.equalTo(container);
+                make.top.equalTo(lastImageView.mas_bottom);
+                make.width.equalTo(@(image.size.width + HorizontalPadding * 2));
+                make.height.equalTo(@(image.size.height + VerticalPadding));
+            }];
+        } else {
+            CGFloat scaledImageViewHeight = imageMaxWidth * image.size.height / image.size.width;
+            [loadedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+                make.left.equalTo(container);
+                make.top.equalTo(lastImageView.mas_bottom);
+                make.width.equalTo(container);
+                make.height.equalTo(@(scaledImageViewHeight + VerticalPadding));
+            }];
+        }
+    }
+}
+
+#pragma mark button actions
 
 - (void) tapLoadPhotoButton:(UIButton *) sender {
     [self presentViewController:self.imagePickerController animated:YES
@@ -339,22 +409,8 @@ static const CGFloat LoadPhotoButtonSide = 20;
 #pragma mark UIImagePickerControllerDelegate
 
 - (void) imagePickerController:(UIImagePickerController *) picker didFinishPickingImage:(UIImage *) image editingInfo:(NSDictionary *) editingInfo {
-    if (image.size.width <= CGRectGetWidth(self.selectedImageView.frame) && image.size.height <= CGRectGetHeight(self.selectedImageView.frame)) {
-        self.selectedImageView.contentMode = UIViewContentModeTopLeft;
-        [self.selectedImageView setImage:image];
-    } else {
-        self.selectedImageView.contentMode = UIViewContentModeScaleAspectFit;
-        CGFloat scaledImageViewHeight = CGRectGetWidth(self.selectedImageView.frame) * image.size.height / image.size.width;
-        [self.selectedImageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-            make.centerX.equalTo(self.scrollView);
-            make.top.equalTo(self.textView.mas_bottom).offset(VerticalPadding);
-            make.width.equalTo(self.view).offset(-HorizontalPadding * 2);
-            make.height.equalTo(@(scaledImageViewHeight));
-        }];
-        [self.selectedImageView setImage:image];
-    }
-    self.imageCloseButton.hidden = NO;
-    [self setScrollViewContentSize];
+    [self layoutImageViewWithImage:image];
+    [self layoutImageViewsContainer];
     [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
@@ -368,13 +424,21 @@ static const CGFloat LoadPhotoButtonSide = 20;
     [self layoutTextView];
 }
 
-#pragma mark UIScrollViewDelegate
+#pragma mark OSClosableImageViewDelegate
 
-- (void) setScrollViewContentSize {
-    CGFloat textViewHeight = [self getCurrentTextViewHeight];
-    CGFloat contentHeight = CGRectGetHeight(self.selectedImageView.frame) + textViewHeight + 2 * VerticalPadding;
-    CGSize scrollViewContentSize = CGSizeMake(CGRectGetWidth(self.view.frame), contentHeight);
-    self.scrollView.contentSize = scrollViewContentSize;
+- (void) closeImageView:(UIImageView *) imageView {
+    OSClosableImageView *targetImageView;
+    for (OSClosableImageView *loadedImageView in self.loadedImageViews) {
+        if ([loadedImageView.imageView isEqual:imageView]) {
+            targetImageView = loadedImageView;
+            break;
+
+        }
+    }
+    [self.loadedImageViews removeObject:targetImageView];
+    [targetImageView removeFromSuperview];
+    [self layoutImageViews];
+    [self layoutImageViewsContainer];
 }
 
 @end

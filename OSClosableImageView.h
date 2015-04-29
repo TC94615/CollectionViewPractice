@@ -4,7 +4,20 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
+extern const CGFloat ButtonBackgroundCircleRadius;
 
-@interface OSClosableImageView : NSObject
+@protocol OSClosableImageViewDelegate<NSObject>
+
+- (void) closeImageView:(UIImageView *) imageView;
+@end
+
+@interface OSClosableImageView : UIView
+@property (nonatomic, strong) id<OSClosableImageViewDelegate> delegate;
+@property (nonatomic, strong) UIImageView *imageView;
+
+- (void) setImage:(UIImage *) image;
+
+- (CGFloat) estimateHeight;
 @end

@@ -4,7 +4,14 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
+extern const CGFloat buttonSide;
+extern const CGFloat AvatarSide;
+extern const CGFloat SeparatorLineHeight;
+extern const CGFloat HorizontalPadding;
+extern const CGFloat VerticalPadding;
+extern const CGFloat LoadPhotoButtonSide;
 
 @interface UIDImen : NSObject
 @end

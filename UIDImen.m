@@ -5,6 +5,12 @@
 
 #import "UIDImen.h"
 
+const CGFloat buttonSide = 30;
+const CGFloat AvatarSide = 40;
+const CGFloat SeparatorLineHeight = 1;
+const CGFloat HorizontalPadding = 10;
+const CGFloat VerticalPadding = 10;
+const CGFloat LoadPhotoButtonSide = 20;
 
 @implementation UIDImen {
 
