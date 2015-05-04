@@ -1,13 +1,19 @@
 PODS:
+  - JTCalendar (1.2.3)
   - Masonry (0.6.1)
   - SZTextView (1.2.1)
+  - TimesSquare (1.0.1)
 
 DEPENDENCIES:
+  - JTCalendar (~> 1.2)
   - Masonry (~> 0.6)
   - SZTextView (~> 1.2)
+  - TimesSquare (~> 1.0)
 
 SPEC CHECKSUMS:
+  JTCalendar: 246ea3e338fb97624846ec77cdcde448242c4d5c
   Masonry: 4972309f2f134de9dd312f4dc4a21359b50e6caa
   SZTextView: 906df45afd3c1b24fc5252088d5ef8061513c238
+  TimesSquare: ffb4fc1456a8121d6bb33d92e640e47bc0e0384b
 
 COCOAPODS: 0.36.4
